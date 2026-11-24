@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>ecommerce_platform</RootNamespace>
+    <UserSecretsId>034dcf65-3837-4e66-bf3e-ed6e98cbb471</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.15" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.15" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.12" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.15" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.15">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.15">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="11.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Common\Exceptions\" />
+    <Folder Include="Common\Middleware\" />
+    <Folder Include="Controllers\" />
+    <Folder Include="Data\Seed\" />
+    <Folder Include="Configurations\" />
+    <Folder Include="Features\Auth\" />
+    <Folder Include="Features\Cart\" />
+    <Folder Include="Features\AI\" />
+    <Folder Include="Features\Payments\" />
+    <Folder Include="Features\Orders\" />
+    <Folder Include="Features\Products\" />
+    <Folder Include="Features\Shops\" />
+    <Folder Include="Features\Users\" />
+    <Folder Include="Infrastructure\AI\" />
+    <Folder Include="Infrastructure\Storage\" />
+  </ItemGroup>
+
+</Project>
