@@ -30,7 +30,6 @@
     <Folder Include="Common\Middleware\" />
     <Folder Include="Controllers\" />
     <Folder Include="Data\Seed\" />
-    <Folder Include="Configurations\" />
     <Folder Include="Features\Auth\" />
     <Folder Include="Features\Cart\" />
     <Folder Include="Features\AI\" />
