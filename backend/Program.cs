@@ -1,14 +1,18 @@
 
+using ecommerce_platform.Configurations;
 using ecommerce_platform.Data;
+using ecommerce_platform.Data.Seed;
 using ecommerce_platform.Domain.Entities;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace ecommerce_platform
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -20,10 +24,71 @@ namespace ecommerce_platform
             builder.Services.AddDataProtection();
 
             // ASP.NET Core Identity
-            builder.Services.AddIdentityCore<ApplicationUser>()
+            builder.Services.AddIdentityCore<ApplicationUser>(options =>
+            {
+                // Password settings
+                options.Password.RequiredLength = 8;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequireDigit = true;
+                options.Password.RequireNonAlphanumeric = true;
+
+                // User settings
+                options.User.RequireUniqueEmail = true;
+
+                // Lockout settings
+                options.Lockout.AllowedForNewUsers = true;
+                options.Lockout.MaxFailedAccessAttempts = 5;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+
+                // Sign-in settings
+                options.SignIn.RequireConfirmedEmail = false;
+            })
                 .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<AppDbContext>()
                 .AddDefaultTokenProviders();
+
+            // ========== start: JWT Settings ==========
+            var jwtSection = builder.Configuration.GetSection(JwtSettings.SectionName);
+            builder.Services.Configure<JwtSettings>(jwtSection);
+            var jwtSettings = jwtSection.Get<JwtSettings>()
+                ?? throw new InvalidOperationException("JWT settings are missing.");
+
+            var keyBytes = Convert.FromBase64String(jwtSettings.SecretKey);
+            if (keyBytes.Length < 32)
+            {
+                throw new InvalidOperationException("JWT Secret Key must be at least 256 bits.");
+            }
+
+            // JWT Authentication
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtSettings.Issuer,
+
+                    ValidateAudience = true,
+                    ValidAudience = jwtSettings.Audience,
+
+                    ValidateLifetime = true,
+
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
+
+                    ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha256 },
+
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
+
+            builder.Services.AddAuthorization();
+            // ========== end: JWT Authentication ==========
 
             // Add services to the container.
 
@@ -39,8 +104,37 @@ namespace ecommerce_platform
                     .GetRequiredService<AppDbContext>();
 
                 var canConnect = dbContext.Database.CanConnect();
-
                 Console.WriteLine($"PostgreSQL connection: {canConnect}");
+
+                // Seed Roles
+                var roleManager = scope.ServiceProvider
+                    .GetRequiredService<RoleManager<IdentityRole>>();
+
+                await IdentitySeeder.SeedRolesAsync(roleManager);
+
+                // Seed Admin
+                if (app.Environment.IsDevelopment())
+                {
+                    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+                    var adminSettings = builder.Configuration
+                        .GetSection(AdminSettings.SectionName)  
+                        .Get<AdminSettings>()
+                        ?? throw new InvalidOperationException("Admin settings are missing.");
+
+                    await using var transaction = await dbContext.Database.BeginTransactionAsync();
+
+                    try
+                    {
+                        await IdentitySeeder.SeedAdminAsync(userManager, adminSettings);
+                        await transaction.CommitAsync();
+                    }
+                    catch
+                    {
+                        await transaction.RollbackAsync();
+                        throw;
+                    }
+                }
             }
 
             // Configure the HTTP request pipeline.
@@ -58,8 +152,9 @@ namespace ecommerce_platform
 
             app.UseHttpsRedirection();
 
-            app.UseAuthorization();
+            app.UseAuthentication();
 
+            app.UseAuthorization();
 
             app.MapControllers();
 
