@@ -1,6 +1,7 @@
 
 using ecommerce_platform.Configurations;
 using ecommerce_platform.Data;
+using ecommerce_platform.Data.Seed;
 using ecommerce_platform.Domain.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -11,7 +12,7 @@ namespace ecommerce_platform
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -103,8 +104,37 @@ namespace ecommerce_platform
                     .GetRequiredService<AppDbContext>();
 
                 var canConnect = dbContext.Database.CanConnect();
-
                 Console.WriteLine($"PostgreSQL connection: {canConnect}");
+
+                // Seed Roles
+                var roleManager = scope.ServiceProvider
+                    .GetRequiredService<RoleManager<IdentityRole>>();
+
+                await IdentitySeeder.SeedRolesAsync(roleManager);
+
+                // Seed Admin
+                if (app.Environment.IsDevelopment())
+                {
+                    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+                    var adminSettings = builder.Configuration
+                        .GetSection(AdminSettings.SectionName)  
+                        .Get<AdminSettings>()
+                        ?? throw new InvalidOperationException("Admin settings are missing.");
+
+                    await using var transaction = await dbContext.Database.BeginTransactionAsync();
+
+                    try
+                    {
+                        await IdentitySeeder.SeedAdminAsync(userManager, adminSettings);
+                        await transaction.CommitAsync();
+                    }
+                    catch
+                    {
+                        await transaction.RollbackAsync();
+                        throw;
+                    }
+                }
             }
 
             // Configure the HTTP request pipeline.
