@@ -3,6 +3,8 @@ using ecommerce_platform.Configurations;
 using ecommerce_platform.Data;
 using ecommerce_platform.Data.Seed;
 using ecommerce_platform.Domain.Entities;
+using ecommerce_platform.Features.Auth.Interfaces;
+using ecommerce_platform.Features.Auth.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +25,7 @@ namespace ecommerce_platform
             // Data Protection
             builder.Services.AddDataProtection();
 
-            // ASP.NET Core Identity
+            // ASP.NET Core Identity    
             builder.Services.AddIdentityCore<ApplicationUser>(options =>
             {
                 // Password settings
@@ -91,10 +93,9 @@ namespace ecommerce_platform
             // ========== end: JWT Authentication ==========
 
             // Add services to the container.
-
             builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
+            builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 
             var app = builder.Build();
 

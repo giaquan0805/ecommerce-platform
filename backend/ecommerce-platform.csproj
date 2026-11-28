@@ -29,7 +29,6 @@
     <Folder Include="Common\Exceptions\" />
     <Folder Include="Common\Middleware\" />
     <Folder Include="Controllers\" />
-    <Folder Include="Features\Auth\" />
     <Folder Include="Features\Cart\" />
     <Folder Include="Features\AI\" />
     <Folder Include="Features\Payments\" />
